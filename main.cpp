@@ -46,7 +46,7 @@ int TSP_otimo(int **grafo, int vertice_inicial, int V);
 int TSP_aproximado(int **grafo, int vertice_inicial, int n_vertices);
 vector<int> arvore_ger_minima(int **grafo, int vert_inicial, int* arv_min, int n_vertices);
 Node* cria_arvore(vector<int> vetor, int n_vertices, int vert_inicial);
-void full_walk(Node *root, vector<int> *caminho);
+void caminhada(Node *root, vector<int> *caminho);
 
 int main(int argc, char** argv) {
     int n_vertices = atoi(argv[1]);
@@ -55,19 +55,19 @@ int main(int argc, char** argv) {
     int **grafo;
 
     grafo = init_matriz_adj(n_vertices);
-//        grafo[0][1] = 10;
-//        grafo[0][2] = 15;
-//        grafo[0][3] = 20;
-//        grafo[1][0] = 10;
-//        grafo[1][2] = 35;
-//        grafo[1][3] = 25;
-//        grafo[2][0] = 15;
-//        grafo[2][1] = 35;
-//        grafo[2][3] = 30;
-//        grafo[3][0] = 20;
-//        grafo[3][1] = 25;
-//        grafo[3][2] = 30;
-    cria_grafo_euclidiano(grafo, n_vertices);
+    grafo[0][1] = 10;
+    grafo[0][2] = 15;
+    grafo[0][3] = 20;
+    grafo[1][0] = 10;
+    grafo[1][2] = 35;
+    grafo[1][3] = 25;
+    grafo[2][0] = 15;
+    grafo[2][1] = 35;
+    grafo[2][3] = 30;
+    grafo[3][0] = 20;
+    grafo[3][1] = 25;
+    grafo[3][2] = 30;
+    //cria_grafo_euclidiano(grafo, n_vertices);
     //imprime_grafo(grafo, n_vertices);
     switch (op) {
         case 0: cout << "Menor caminho:\t" << TSP_otimo(grafo, vertice_inicial, n_vertices) << endl;
@@ -114,7 +114,7 @@ int TSP_aproximado(int **grafo, int vertice_inicial, int n_vertices) {
     status[vertice_inicial] = 1;
     vetor = arvore_ger_minima(grafo, vertice_inicial, arv_min, n_vertices);
     Node *root = cria_arvore(vetor, n_vertices, vertice_inicial);
-    full_walk(root, &caminho);
+    caminhada(root, &caminho);
     // Mostra caminho percorrido
     //    cout << "Full Walk:\t";
     //    for (int i = 0; i < caminho.size(); i++) {
@@ -272,13 +272,13 @@ Node* cria_arvore(vector<int> vetor, int n_vertices, int vert_inicial) {
     return arvore[vert_inicial];
 }
 
-void full_walk(Node *root, vector<int> *caminho) {
+void caminhada(Node *root, vector<int> *caminho) {
     caminho->push_back(root->index);
     if (root->prox.size() == 0) {
         return;
     } else {
         for (int i = 0; i < root->prox.size(); i++) {
-            full_walk(&root->prox[i], caminho);
+            caminhada(&root->prox[i], caminho);
             caminho->push_back(root->index);
         }
     }
