@@ -18,6 +18,7 @@
 #include <bits/stdc++.h>
 #include <time.h>
 #include <random>
+#include <fstream>
 
 using namespace std;
 
@@ -39,40 +40,40 @@ struct Node {
 };
 
 int** init_matriz_adj(int n_vertices);
-void cria_grafo_euclidiano(int **grafo, int n_vertices);
+void TSP_otimo(int **grafo, int vertice_inicial, int V);
+void TSP_aproximado(int **grafo, int vertice_inicial, int n_vertices);
 void imprime_grafo(int **grafo, int n_vertices);
 void destroi_grafo(int **grafo, int n_vertices);
-int TSP_otimo(int **grafo, int vertice_inicial, int V);
-int TSP_aproximado(int **grafo, int vertice_inicial, int n_vertices);
-vector<int> arvore_ger_minima(int **grafo, int vert_inicial, int* arv_min, int n_vertices);
-Node* cria_arvore(vector<int> vetor, int n_vertices, int vert_inicial);
 void caminhada(Node *root, vector<int> *caminho);
+void completa_matriz(int **grafo, int n_vertices);
+vector<int> arvore_ger_minima(int **grafo, int vert_inicial, int n_vertices);
+Node* cria_arvore(vector<int> vetor, int n_vertices, int vert_inicial);
 
 int main(int argc, char** argv) {
-    int n_vertices = atoi(argv[1]);
-    int vertice_inicial = atoi(argv[2]);
-    int op = atoi(argv[3]) == 0 ? 0 : 1;
+    int n_vertices = 5;
+    int vertice_inicial = atoi(argv[1]);
+    int op = atoi(argv[2]) == 0 ? 0 : 1;
     int **grafo;
+    ifstream file;
+    file.open("./Gria_grafo/grafo.txt", std::ofstream::in);
+    string line;
+
+    if (file.is_open()) {
+        getline(file, line);
+        n_vertices = stoi(line);
+        file.close();
+    } else {
+        cout << "Problema na leitura do arquivo." << endl;
+    }
 
     grafo = init_matriz_adj(n_vertices);
-    grafo[0][1] = 10;
-    grafo[0][2] = 15;
-    grafo[0][3] = 20;
-    grafo[1][0] = 10;
-    grafo[1][2] = 35;
-    grafo[1][3] = 25;
-    grafo[2][0] = 15;
-    grafo[2][1] = 35;
-    grafo[2][3] = 30;
-    grafo[3][0] = 20;
-    grafo[3][1] = 25;
-    grafo[3][2] = 30;
-    //cria_grafo_euclidiano(grafo, n_vertices);
-    //imprime_grafo(grafo, n_vertices);
+    completa_matriz(grafo, n_vertices);
+    imprime_grafo(grafo, n_vertices);
+
     switch (op) {
-        case 0: cout << "Menor caminho:\t" << TSP_otimo(grafo, vertice_inicial, n_vertices) << endl;
+        case 0: TSP_otimo(grafo, vertice_inicial, n_vertices);
             break;
-        case 1: cout << "Menor caminho aproximado:  " << TSP_aproximado(grafo, vertice_inicial, n_vertices) << endl;
+        case 1: TSP_aproximado(grafo, vertice_inicial, n_vertices);
             break;
     }
 
@@ -82,8 +83,10 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-int TSP_otimo(int **grafo, int vertice_inicial, int V) {
+void TSP_otimo(int **grafo, int vertice_inicial, int V) {
     vector<int> vertices;
+    vector<int> caminho, caminho_final;
+    int aux = vertice_inicial;
     for (int i = 0; i < V; i++)
         if (i != vertice_inicial)
             vertices.push_back(i);
@@ -91,97 +94,60 @@ int TSP_otimo(int **grafo, int vertice_inicial, int V) {
     do {
         int tamanho_caminho_atual = 0;
         int k = vertice_inicial;
+        caminho.clear();
+        caminho.push_back(k);
         for (int i = 0; i < vertices.size(); i++) {
             tamanho_caminho_atual += grafo[k][vertices[i]];
             k = vertices[i];
+            caminho.push_back(k);
         }
         tamanho_caminho_atual += grafo[k][vertice_inicial];
+        if (caminho_minimo > tamanho_caminho_atual) {
+            caminho_final.clear();
+            for (int i = 0; i < caminho.size(); i++) {
+                caminho_final.push_back(caminho[i]);
+            }
+            caminho_final.push_back(aux);
+        }
         caminho_minimo = min(caminho_minimo, tamanho_caminho_atual);
     } while (next_permutation(vertices.begin(), vertices.end()));
-    return caminho_minimo;
+    cout << "Caminho percorrido:\t";
+    for (int i = 0; i < caminho_final.size(); i++) {
+        cout << caminho_final[i] << " ";
+    }
+    cout << "\nMenor caminho:\t" << caminho_minimo << endl;
 }
 
-int TSP_aproximado(int **grafo, int vertice_inicial, int n_vertices) {
-    int *arv_min = (int *) malloc(n_vertices * sizeof (int));
+void TSP_aproximado(int **grafo, int vertice_inicial, int n_vertices) {
     int status[n_vertices];
     int dist = 0;
     int primeiro = 1;
     int ultimo = 0;
-    vector<int> vetor, caminho;
+    vector<int> vetor, caminho, caminho_final;
     for (int i = 0; i < n_vertices; i++) {
         status[i] = -1;
     }
-    status[vertice_inicial] = 1;
-    vetor = arvore_ger_minima(grafo, vertice_inicial, arv_min, n_vertices);
+    vetor = arvore_ger_minima(grafo, vertice_inicial, n_vertices);
     Node *root = cria_arvore(vetor, n_vertices, vertice_inicial);
     caminhada(root, &caminho);
-    // Mostra caminho percorrido
-    //    cout << "Full Walk:\t";
-    //    for (int i = 0; i < caminho.size(); i++) {
-    //        cout << caminho[i] << " ";
-    //    }
-    //    cout << "\n" << endl;
+    status[vertice_inicial] = 1;
+    ultimo = vertice_inicial;
     for (int i = 0; i < caminho.size() - 1; i++) {
-        if (status[caminho[i + 1]] == -1 || primeiro == 1) {
-            dist += grafo[caminho[i]][caminho[i + 1]];
-            status[caminho[i]] = 1;
-            if (status[caminho[i]] == -1) {
-                ultimo = caminho[i];
-            }
-            primeiro = 0;
-        } else {
-            for (int j = i; j < caminho.size() - 1; j++) {
-                if (status[caminho[j + 1]] == -1) {
-                    dist += grafo[caminho[i]][caminho[j + 1]];
-                    status[caminho[j]] = 1;
-                    i = j;
-                    if (status[caminho[j]] == -1) {
-                        ultimo = caminho[j];
-                    }
-                    break;
-                } else {
-                    if (status[caminho[j]] == -1) {
-                        ultimo = caminho[j];
-                    }
-                }
-            }
+        if (status[caminho[i + 1]] == -1) {
+            dist += grafo[ultimo][caminho[i + 1]];
+            caminho_final.push_back(ultimo);
+            ultimo = caminho[i + 1];
+            status[caminho[i + 1]] = 1;
         }
     }
+    caminho_final.push_back(ultimo);
+    caminho_final.push_back(vertice_inicial);
     dist += grafo[ultimo][vertice_inicial];
-
-    return dist;
-}
-
-void cria_grafo_euclidiano(int **grafo, int n_vertices) {
-    srand(time(0));
-    int i = 0, j = 0, valor = 0;
-    for (; i < n_vertices;) {
-        for (; j < n_vertices;) {
-            if (i == j) {
-                grafo[i][j] = 0;
-            } else {
-                while (valor == 0) {
-                    valor = rand() % 20;
-                    if (valor != 0)
-                        grafo[i][j] = valor;
-                }
-            }
-            j++;
-            valor = 0;
-        }
-        i++;
-        j = i;
+    cout << "Caminho percorrido:\t";
+    for (int i = 0; i < caminho_final.size(); i++) {
+        cout << caminho_final[i] << " ";
     }
-    i = 1;
-    j = 0;
-    for (; i < n_vertices;) {
-        for (; j < i;) {
-            grafo[i][j] = grafo[j][i];
-            j++;
-        }
-        i++;
-        j = 0;
-    }
+    cout << "\nCaminho aproximado:\t" << dist << endl;
 }
 
 void imprime_grafo(int **grafo, int n_vertices) {
@@ -201,6 +167,27 @@ int** init_matriz_adj(int n_vertices) {
     return grafo;
 }
 
+void completa_matriz(int **grafo, int n_vertices) {
+    ifstream file;
+    file.open("./Gria_grafo/grafo.txt", std::ofstream::in);
+    string line;
+
+    if (file.is_open()) {
+        getline(file, line);
+        cout << line << endl;
+        for (int i = 0; i < n_vertices; i++) {
+            for (int j = 0; j < n_vertices; j++) {
+                getline(file, line);
+                grafo[i][j] = stoi(line);
+            }
+
+        }
+        file.close();
+    } else {
+        cout << "Problema na leitura do arquivo." << endl;
+    }
+}
+
 void destroi_grafo(int **grafo, int n_vertices) {
     for (int i = 0; i < n_vertices; i++) {
         free(grafo[i]);
@@ -208,31 +195,33 @@ void destroi_grafo(int **grafo, int n_vertices) {
     free(grafo);
 }
 
-vector<int> arvore_ger_minima(int **grafo, int vert_inicial, int* arv_min, int n_vertices) {
-    int i, j, dest, primeiro, menor_dist, aux;
+vector<int> arvore_ger_minima(int **grafo, int vert_inicial, int n_vertices) {
+    int i, j, dest, primeiro, menor_dist;
     vector<int> vertices;
+    int arv_min[n_vertices];
     for (i = 0; i < n_vertices; i++) {
         arv_min[i] = -1;
     }
-    aux = vert_inicial;
     arv_min[vert_inicial] = vert_inicial;
     while (1) {
         primeiro = 1;
         for (i = 0; i < n_vertices; i++) {
-            for (int x = 0; x < n_vertices; x++)
-                if (x != i)
+            vertices.clear();
+            for (int x = 0; x < n_vertices; x++) {
+                if (i != x)
                     vertices.push_back(x);
+            }
             if (arv_min[i] != -1) {
                 for (j = 0; j < vertices.size(); j++) {
                     if (arv_min[vertices[j]] == -1) {
                         if (primeiro) {
-                            menor_dist = grafo[i][j];
+                            menor_dist = grafo[i][vertices[j]];
                             vert_inicial = i;
                             dest = vertices[j];
                             primeiro = 0;
                         } else {
-                            if (menor_dist > grafo[i][j]) {
-                                menor_dist = grafo[i][j];
+                            if (menor_dist > grafo[i][vertices[j]]) {
+                                menor_dist = grafo[i][vertices[j]];
                                 vert_inicial = i;
                                 dest = vertices[j];
                             }
@@ -255,20 +244,35 @@ vector<int> arvore_ger_minima(int **grafo, int vert_inicial, int* arv_min, int n
 Node* cria_arvore(vector<int> vetor, int n_vertices, int vert_inicial) {
     Node **arvore = (Node**) malloc(n_vertices * sizeof (Node*));
     Node **atual = (Node**) malloc(n_vertices * sizeof (Node*));
+    //Node **atual;
+    vector<int> temp;
     for (int i = 0; i < n_vertices; i++) {
-        //Node novo = Node(i);
         arvore[i] = new Node(i);
     }
-    for (int j = 0; j < n_vertices; j++) {
-        atual[j] = arvore[j];
-        for (int i = 0; i < n_vertices; i++) {
+    atual = &arvore[vert_inicial];
+    int i = 0, j = 0;
+
+    //for (int j = 0; j < n_vertices; j++) {
+
+    //        atual = &arvore[j];
+    while (vetor.size() > 0) {
+        for (i = 0; i < vetor.size(); i++) {
             if (i != j) {
-                if (vetor[i] == atual[j]->index) {
-                    atual[j]->add_node(*arvore[i]);
+                if (vetor.front() == (*atual)->index) {
+                    (*atual)->add_node(*arvore[i]);
+                    vetor.erase(vetor.begin());
+                } else {
+                    temp.push_back(vetor.front());
                 }
+            } else {
+                temp.push_back(vetor.front());
             }
+            i++;
         }
+        vetor = temp;
+        temp.clear();
     }
+    //}
     return arvore[vert_inicial];
 }
 

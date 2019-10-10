@@ -32,36 +32,29 @@ struct Ponto {
     }
 };
 
-void cria_matriz_adj(Ponto **pontos, float **matriz, int n_vertices);
+void cria_matriz_adj(Ponto **pontos, int **matriz, int n_vertices);
+void print_pontos(Ponto **pontos, int n_vertices);
 void cria_pontos(Ponto **pontos, int n_vertices);
-float** matriz_init(int n_vertices);
+void escreve_arq(int **matriz, int n_vertices);
+int** matriz_init(int n_vertices);
 
 int main(int argc, char** argv) {
 
-    ofstream file;
     int n_vertices = atoi(argv[1]);
-    float **matriz;
+    int **matriz;
     Ponto **pontos = (Ponto**) malloc(n_vertices * sizeof (Ponto*));
 
     matriz = matriz_init(n_vertices);
-
-    file.open("grafo.txt", std::ofstream::out);
-    file << argv[1] << endl;
-
     cria_pontos(pontos, n_vertices);
     cria_matriz_adj(pontos, matriz, n_vertices);
+    print_pontos(pontos, n_vertices);
+    escreve_arq(matriz, n_vertices);
 
-    for (int i = 0; i < n_vertices; i++) {
-        for (int j = 0; j < n_vertices; j++) {
-            file << matriz[i][j] << endl;
-        }
-
-    }
     return 0;
 }
 
 void cria_pontos(Ponto **pontos, int n_vertices) {
-    int range = 10;
+    int range = 100;
     int x, y;
     srand(time(0));
     for (int i = 0; i < n_vertices; i++) {
@@ -71,21 +64,41 @@ void cria_pontos(Ponto **pontos, int n_vertices) {
     }
 }
 
-void cria_matriz_adj(Ponto **pontos, float **matriz, int n_vertices) {
+void cria_matriz_adj(Ponto **pontos, int **matriz, int n_vertices) {
     int i = 0, j = 0, valor = 0;
     for (i = 0; i < n_vertices; i++) {
         for (j = 0; j < n_vertices; j++) {
-            valor = sqrt((float)pow((float)(pontos[i]->x - pontos[j]->x),2) + (float)pow((pontos[i]->y - pontos[j]->y),2));
+            valor = (int) sqrt(pow((pontos[i]->x - pontos[j]->x), 2) + pow((pontos[i]->y - pontos[j]->y), 2));
             matriz[i][j] = valor;
             valor = 0;
         }
     }
 }
 
-    float** matriz_init(int n_vertices) {
-        float **matriz = (float **) malloc(n_vertices * sizeof (float*));
-        for (int i = 0; i < n_vertices; i++) {
-            matriz[i] = (float *) calloc(n_vertices, sizeof (float));
-        }
-        return matriz;
+int** matriz_init(int n_vertices) {
+    int **matriz = (int **) malloc(n_vertices * sizeof (int*));
+    for (int i = 0; i < n_vertices; i++) {
+        matriz[i] = (int *) calloc(n_vertices, sizeof (int));
     }
+    return matriz;
+}
+
+void print_pontos(Ponto **pontos, int n_vertices) {
+    for (int i = 0; i < n_vertices; i++) {
+        cout << "X = " << pontos[i]->x << "\tY = " << pontos[i]->y << endl;
+    }
+
+}
+
+void escreve_arq(int **matriz, int n_vertices) {
+    ofstream file;
+    file.open("grafo.txt", std::ofstream::out);
+    file << n_vertices << endl;
+    
+    for (int i = 0; i < n_vertices; i++) {
+        for (int j = 0; j < n_vertices; j++) {
+            file << matriz[i][j] << endl;
+        }
+    }
+    file.close();
+}
