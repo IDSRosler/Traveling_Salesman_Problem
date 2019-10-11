@@ -19,6 +19,7 @@
 #include <time.h>
 #include <random>
 #include <fstream>
+#include <list>
 
 using namespace std;
 
@@ -50,12 +51,12 @@ vector<int> arvore_ger_minima(int **grafo, int vert_inicial, int n_vertices);
 Node* cria_arvore(vector<int> vetor, int n_vertices, int vert_inicial);
 
 int main(int argc, char** argv) {
-    int n_vertices = 5;
+    int n_vertices;
     int vertice_inicial = atoi(argv[1]);
     int op = atoi(argv[2]) == 0 ? 0 : 1;
     int **grafo;
     ifstream file;
-    file.open("./Gria_grafo/grafo.txt", std::ofstream::in);
+    file.open("./Cria_Grafo/grafo.txt", std::ofstream::in);
     string line;
 
     if (file.is_open()) {
@@ -130,6 +131,10 @@ void TSP_aproximado(int **grafo, int vertice_inicial, int n_vertices) {
     vetor = arvore_ger_minima(grafo, vertice_inicial, n_vertices);
     Node *root = cria_arvore(vetor, n_vertices, vertice_inicial);
     caminhada(root, &caminho);
+    for (int i = 0; i < vetor.size(); i++) {
+        cout << vetor[i] << " ";
+    }
+    cout << "\n";
     status[vertice_inicial] = 1;
     ultimo = vertice_inicial;
     for (int i = 0; i < caminho.size() - 1; i++) {
@@ -169,7 +174,7 @@ int** init_matriz_adj(int n_vertices) {
 
 void completa_matriz(int **grafo, int n_vertices) {
     ifstream file;
-    file.open("./Gria_grafo/grafo.txt", std::ofstream::in);
+    file.open("./Cria_Grafo/grafo.txt", std::ofstream::in);
     string line;
 
     if (file.is_open()) {
@@ -243,36 +248,15 @@ vector<int> arvore_ger_minima(int **grafo, int vert_inicial, int n_vertices) {
 
 Node* cria_arvore(vector<int> vetor, int n_vertices, int vert_inicial) {
     Node **arvore = (Node**) malloc(n_vertices * sizeof (Node*));
-    Node **atual = (Node**) malloc(n_vertices * sizeof (Node*));
-    //Node **atual;
-    vector<int> temp;
     for (int i = 0; i < n_vertices; i++) {
         arvore[i] = new Node(i);
     }
-    atual = &arvore[vert_inicial];
-    int i = 0, j = 0;
-
-    //for (int j = 0; j < n_vertices; j++) {
-
-    //        atual = &arvore[j];
-    while (vetor.size() > 0) {
-        for (i = 0; i < vetor.size(); i++) {
-            if (i != j) {
-                if (vetor.front() == (*atual)->index) {
-                    (*atual)->add_node(*arvore[i]);
-                    vetor.erase(vetor.begin());
-                } else {
-                    temp.push_back(vetor.front());
-                }
-            } else {
-                temp.push_back(vetor.front());
-            }
-            i++;
+    for (int i = 0; i < n_vertices; i++) {
+        if (i != vetor[i]) {
+            arvore[vetor[i]]->add_node(*arvore[i]);
+            cout << arvore[vetor[i]]->index << " " << arvore[i]->index << endl;
         }
-        vetor = temp;
-        temp.clear();
     }
-    //}
     return arvore[vert_inicial];
 }
 
